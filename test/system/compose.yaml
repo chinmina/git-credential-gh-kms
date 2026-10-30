@@ -16,5 +16,5 @@ services:
       - /tests
     networks:
       - default
-    # Intentionally no depends_on: setup_file retries kms-support create-key
+    # Intentionally no depends_on: setup_file retries test-support create-key
     # until the KMS API is ready, making that call the real readiness probe.

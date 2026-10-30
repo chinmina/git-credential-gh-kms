@@ -1,8 +1,8 @@
-// Command kms-support prepares and serves the black-box system tests for
+// Command test-support prepares and serves the black-box system tests for
 // git-credential-gh-kms. It is not built by GoReleaser or shipped.
 //
-//	kms-support create-key [-arn] [-alias name] [-encrypt]
-//	kms-support fake-github -key-id id -app-id id -installation-id n -token t -ca-out path [-listen addr]
+//	test-support create-key [-arn] [-alias name] [-encrypt]
+//	test-support fake-github -key-id id -app-id id -installation-id n -token t -ca-out path [-listen addr]
 package main
 
 import (
@@ -42,14 +42,14 @@ import (
 
 func main() {
 	if err := run(context.Background(), os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, "kms-support:", err)
+		fmt.Fprintln(os.Stderr, "test-support:", err)
 		os.Exit(1)
 	}
 }
 
 func run(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: kms-support create-key|fake-github [flags]")
+		return errors.New("usage: test-support create-key|fake-github [flags]")
 	}
 	switch args[0] {
 	case "create-key":

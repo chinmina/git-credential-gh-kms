@@ -26,14 +26,14 @@ test:
 
 check: fmt-check vet lint test
 
-# Build Linux binaries of the helper and the unshipped kms-support tool for the system tests.
+# Build Linux binaries of the helper and the unshipped test-support tool for the system tests.
 system-artifact-build:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p bin/linux
     export CGO_ENABLED=0 GOOS=linux GOARCH="$(go env GOARCH)"
     go build -trimpath -o bin/linux/{{binary}} .
-    go build -trimpath -o bin/linux/kms-support ./cmd/kms-support
+    go build -trimpath -o bin/linux/test-support ./cmd/test-support
 
 # Run the containerized system tests against a fresh Local KMS instance.
 # Leaves Compose resources running for inspection; use system-cleanup to remove them.

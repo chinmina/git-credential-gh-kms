@@ -1,16 +1,16 @@
 # Black-box system test for git-credential-gh-kms.
 #
-# The BATS container runs the helper and the unshipped kms-support binary
+# The BATS container runs the helper and the unshipped test-support binary
 # mounted from bin/linux/. The helper signs with Local KMS through the real AWS
-# SDK, and kms-support serves a fake GitHub token endpoint that only accepts
+# SDK, and test-support serves a fake GitHub token endpoint that only accepts
 # JWTs verifying against that KMS key's public key.
 
 bats_require_minimum_version 1.5.0
 
 setup_file() {
-  KMS_SUPPORT=/artifacts/kms-support
+  TEST_SUPPORT=/artifacts/test-support
   HELPER=/artifacts/git-credential-gh-kms
-  export KMS_SUPPORT HELPER
+  export TEST_SUPPORT HELPER
 
   AWS_ACCESS_KEY_ID=test
   AWS_SECRET_ACCESS_KEY=test
@@ -32,7 +32,7 @@ setup_file() {
   export KMS_KEY_ARN GH_KMS_KEY_ID GH_APP_ID GH_INSTALLATION_ID GH_API_URL INSTALLATION_TOKEN SSL_CERT_FILE
 
   # fd 3 is closed so BATS does not wait on the background server.
-  "$KMS_SUPPORT" fake-github \
+  "$TEST_SUPPORT" fake-github \
     -listen 127.0.0.1:8443 \
     -key-id "$GH_KMS_KEY_ID" \
     -app-id "$GH_APP_ID" \
@@ -70,12 +70,12 @@ teardown() {
   sed 's/^/#   /' "$BATS_FILE_TMPDIR/fake-github.log"
 }
 
-# create_key keeps calling kms-support create-key until Local KMS is ready,
+# create_key keeps calling test-support create-key until Local KMS is ready,
 # then prints the new key's identifier. Arguments pass through to create-key.
 create_key() {
   local key_id=""
   for _ in {1..30}; do
-    key_id=$("$KMS_SUPPORT" create-key "$@" 2>/dev/null)
+    key_id=$("$TEST_SUPPORT" create-key "$@" 2>/dev/null)
     if [[ -n "$key_id" ]]; then
       printf "%s" "$key_id"
       return 0
@@ -138,7 +138,7 @@ credential_get_without_aws_credentials() {
 
 @test "fails when GitHub rejects a signature from another KMS key" {
   local other_key
-  other_key=$("$KMS_SUPPORT" create-key)
+  other_key=$("$TEST_SUPPORT" create-key)
   GH_KMS_KEY_ID=$other_key run --separate-stderr credential_get
   assert_failure
   assert_equal "$output" ""
@@ -168,7 +168,7 @@ credential_get_without_aws_credentials() {
 
 @test "fails when the KMS key is not a signing key" {
   local key_id
-  key_id=$("$KMS_SUPPORT" create-key -encrypt)
+  key_id=$("$TEST_SUPPORT" create-key -encrypt)
   GH_KMS_KEY_ID=$key_id run --separate-stderr credential_get
   assert_failure
   assert_equal "$output" ""
