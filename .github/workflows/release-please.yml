@@ -1,0 +1,30 @@
+# chinmina/git-credential-gh-kms — release-please trigger.
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+# Default-deny at the workflow level; grant the GITHUB_TOKEN ceiling on the JOB
+# that calls the reusable workflow (secure by default — no other job sees it).
+permissions: {}
+
+jobs:
+  release-please:
+    # Caller permissions are a CEILING — a reusable workflow can only DOWNGRADE
+    # the GITHUB_TOKEN, never elevate it. Grant at least what the reusable
+    # workflow's job declares, or the run fails at startup.
+    permissions:
+      contents: read
+      # REQUIRED on BOTH token paths: the reusable job declares id-token: write,
+      # so the caller must match it even on the app path (where it is unused).
+      id-token: write
+    uses: chinmina/.github/.github/workflows/release-please.yml@verified-actions
+    with:
+      token-source: app
+    # The App secrets live in the automation environment. Passed by name, GitHub
+    # resolves them for the reusable job, which runs there. `secrets: inherit`
+    # passes nothing across owners, so the kit standard is the named map.
+    secrets:
+      RELEASE_PLEASE_CLIENT_ID: ${{ secrets.RELEASE_PLEASE_CLIENT_ID }}
+      RELEASE_PLEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}

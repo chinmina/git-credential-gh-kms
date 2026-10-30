@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# mise.toml is the source of truth for tool versions. Each job installs only the
+# tools it needs through mise-action; setup-go is given no version, so it adopts
+# the mise-installed Go and only adds module/build caching and problem matchers.
+#
+# Tool caches (mise, golangci-lint) are saved only on push to main; other runs
+# restore them read-only. setup-go has no save-only switch, so its cache follows
+# GitHub's defaults (PR saves are scoped to the PR ref).
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: go just
+          cache_save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+
+      - name: Run tests
+        run: just test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: go golangci-lint
+          cache_save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+
+      # Runs the mise-installed golangci-lint; the action adds PR annotations
+      # and caches lint results.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          install-mode: none
+          skip-save-cache: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+
+  build:
+    name: Build (snapshot)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: go goreleaser
+          cache_save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+
+      - name: Build snapshot
+        run: goreleaser build --snapshot --clean --single-target
