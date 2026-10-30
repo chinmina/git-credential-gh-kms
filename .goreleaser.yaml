@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: git-credential-gh-kms
+
+builds:
+  - id: release
+    binary: git-credential-gh-kms
+    main: .
+    flags:
+      - "-trimpath"
+    ldflags: "-s -w -X main.version={{.Version}}"
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+# The release workflow attests every file listed here.
+checksum:
+  name_template: "checksums.txt"
+
+archives:
+  - id: archives
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+# Release notes come from release-please; mode: keep-existing keeps them.
+release:
+  draft: true # the release workflow publishes it after attestation
+  use_existing_draft: true # find and fill the release-please draft
+  replace_existing_artifacts: true # let a re-run replace assets an earlier run uploaded
+  mode: keep-existing # keep the release-please title and notes
+  prerelease: auto # mark v1.2.3-rc.1 style tags as prereleases
+
+homebrew_casks:
+  - name: git-credential-gh-kms
+    repository:
+      owner: chinmina
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_GITHUB_TOKEN }}" # set by the release workflow
+    # Leave the committer unset, so GitHub signs the commit as the token's App.
+    commit_author:
+      use_github_app_token: true
+    skip_upload: auto # no cask for prerelease tags
+    homepage: "https://github.com/chinmina/git-credential-gh-kms"
+    description: "Git credential helper that mints GitHub App installation tokens, signing the App JWT with an AWS KMS key"
+    # Clear the macOS quarantine attribute after install. custom_block carries
+    # postflight_steps until goreleaser ships hooks.post.install_steps
+    # (goreleaser/goreleaser#6873).
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{staged_path}}" }}/git-credential-gh-kms"]
+        end
+      end
+
+nix:
+  - name: git-credential-gh-kms
+    repository:
+      owner: chinmina
+      name: nixpkgs
+      token: "{{ .Env.NIX_GITHUB_TOKEN }}" # set by the release workflow
+    # Leave the committer unset, so GitHub signs the commit as the token's App.
+    commit_author:
+      use_github_app_token: true
+    skip_upload: auto # no recipe for prerelease tags
+    homepage: "https://github.com/chinmina/git-credential-gh-kms"
+    description: "Git credential helper that mints GitHub App installation tokens, signing the App JWT with an AWS KMS key"
+    license: "asl20"

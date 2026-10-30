@@ -1,0 +1,32 @@
+# chinmina/git-credential-gh-kms — build/attest/publish on the v* tag pushed by release-please.
+# Filename kept as release.yml for future npm trusted-publishing compatibility.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+# Default-deny at the workflow level; grant on the calling JOB (see release-please.yml).
+permissions: {}
+
+jobs:
+  release:
+    # Caller permissions are a CEILING (see release-please.yml). Grant at least
+    # what goreleaser-release.yml's job declares.
+    permissions:
+      contents: write # fill + publish the release, push assets
+      id-token: write # keyless attestation (declared on the app path too)
+      attestations: write # record build attestations
+    uses: chinmina/.github/.github/workflows/goreleaser-release.yml@verified-actions
+    with:
+      token-source: app
+      # Channels: GitHub release, binstaller, Homebrew and Nix stay ON
+      # (defaults). This repo ships no container image and no npm package.
+      disable-docker-login: true # no container image (login defaults ON, fails fast)
+      disable-npm: true # no npm package (npm defaults ON, opt out explicitly)
+    # Homebrew and Nix mint the package-repo token from the App secrets in the
+    # release environment. Passed by name, GitHub resolves them for the
+    # reusable job, which runs there.
+    secrets:
+      RELEASE_PLEASE_CLIENT_ID: ${{ secrets.RELEASE_PLEASE_CLIENT_ID }}
+      RELEASE_PLEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
