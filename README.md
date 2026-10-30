@@ -155,3 +155,11 @@ commit, and every asset. Check a downloaded file against it with GitHub CLI
 ```sh
 gh release verify-asset v1.2.3 git-credential-gh-kms_linux_amd64.tar.gz --repo chinmina/git-credential-gh-kms
 ```
+
+## Development
+
+`just check` runs formatting, vet, lint and unit tests. `just test-system` runs the
+black-box system tests in Docker Compose: the Linux build of the helper signs with
+[Local KMS](https://github.com/nsmithuk/local-kms) through the AWS SDK, and a fake
+GitHub token endpoint (`cmd/kms-support`, not shipped) accepts only JWTs that verify
+against the KMS key's public key. The tests are in [`test/system/bats`](test/system/bats).
