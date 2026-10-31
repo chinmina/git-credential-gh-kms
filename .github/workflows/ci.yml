@@ -76,6 +76,13 @@ jobs:
       - name: Build snapshot
         run: goreleaser build --snapshot --clean --single-target
 
+      - name: Check embedded version
+        run: |
+          want=$(jq -r .version dist/metadata.json)
+          bin=$(jq -r '.[] | select(.type == "Binary") | .path' dist/artifacts.json)
+          got=$("$bin" --version)
+          test "$got" = "$want" || { echo "::error::--version printed '$got', want '$want'"; exit 1; }
+
   system-test:
     name: System tests
     runs-on: ubuntu-latest
