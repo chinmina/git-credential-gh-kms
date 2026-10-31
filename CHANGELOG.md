@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/chinmina/git-credential-gh-kms/compare/v0.1.0...v0.1.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* harden credential request parsing and setup guidance ([#8](https://github.com/chinmina/git-credential-gh-kms/issues/8)) ([df1f075](https://github.com/chinmina/git-credential-gh-kms/commit/df1f075fb19c0acca15db69444f3eda41fec2155))
+* report the module version from source builds ([#11](https://github.com/chinmina/git-credential-gh-kms/issues/11)) ([9b23f52](https://github.com/chinmina/git-credential-gh-kms/commit/9b23f52f6491d9865e79a553390a2827abe6627f))
+
 ## 0.1.0 (2026-10-31)
 
 
