@@ -9,6 +9,12 @@ linters:
     - noctx
     - revive
     - unconvert
+  exclusions:
+    rules:
+      # The fake GitHub server logs request fields %q-quoted to a test-only log file.
+      - path: ^cmd/test-support/
+        linters: [gosec]
+        text: G706
 
 formatters:
   enable:

@@ -75,3 +75,21 @@ jobs:
 
       - name: Build snapshot
         run: goreleaser build --snapshot --clean --single-target
+
+  system-test:
+    name: System tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: go just
+          cache_save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+
+      - name: Run system tests
+        run: just test-system
