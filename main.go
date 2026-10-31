@@ -93,7 +93,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 		return fmt.Errorf("read credential request: %w", err)
 	}
 	host := cmp.Or(os.Getenv("GH_HOST"), defaultHost)
-	if req["protocol"] != "https" || !strings.EqualFold(req["host"], host) {
+	if req["protocol"] != "https" || !asciiEqualFold(req["host"], host) {
 		return nil // not ours; let git try the next helper
 	}
 
@@ -116,6 +116,27 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 	return writeCredential(stdout, tok)
 }
 
+// asciiEqualFold matches DNS names case-insensitively. strings.EqualFold also
+// folds Unicode, so "ſ" (U+017F) would match "s" and "K" (U+212A) "k".
+func asciiEqualFold(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range len(a) {
+		if asciiLower(a[i]) != asciiLower(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func asciiLower(c byte) byte {
+	if 'A' <= c && c <= 'Z' {
+		return c + 'a' - 'A'
+	}
+	return c
+}
+
 func writeCredential(stdout io.Writer, tok *installationToken) error {
 	b := fmt.Appendf(nil, "username=x-access-token\npassword=%s\n", tok.Token)
 	if !tok.ExpiresAt.IsZero() {
@@ -131,9 +152,15 @@ func readRequest(r io.Reader) (map[string]string, error) {
 	m := make(map[string]string)
 	sc := bufio.NewScanner(r)
 	for sc.Scan() && sc.Text() != "" {
-		if k, v, ok := strings.Cut(sc.Text(), "="); ok {
-			m[k] = v
+		k, v, ok := strings.Cut(sc.Text(), "=")
+		if !ok {
+			continue
 		}
+		// Git sends single-valued attributes once; a repeat means injected lines.
+		if _, dup := m[k]; dup && !strings.HasSuffix(k, "[]") {
+			return nil, fmt.Errorf("duplicate attribute %q", k)
+		}
+		m[k] = v
 	}
 	return m, sc.Err()
 }
@@ -162,7 +189,7 @@ func load(host string) (*settings, error) {
 	}
 
 	apiURL := defaultAPI
-	if !strings.EqualFold(host, defaultHost) {
+	if !asciiEqualFold(host, defaultHost) {
 		apiURL = "https://" + host + "/api/v3"
 	}
 	api, err := url.Parse(cmp.Or(os.Getenv("GH_API_URL"), apiURL))
