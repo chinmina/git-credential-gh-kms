@@ -131,9 +131,15 @@ func readRequest(r io.Reader) (map[string]string, error) {
 	m := make(map[string]string)
 	sc := bufio.NewScanner(r)
 	for sc.Scan() && sc.Text() != "" {
-		if k, v, ok := strings.Cut(sc.Text(), "="); ok {
-			m[k] = v
+		k, v, ok := strings.Cut(sc.Text(), "=")
+		if !ok {
+			continue
 		}
+		// Git sends single-valued attributes once; a repeat means injected lines.
+		if _, dup := m[k]; dup && !strings.HasSuffix(k, "[]") {
+			return nil, fmt.Errorf("duplicate attribute %q", k)
+		}
+		m[k] = v
 	}
 	return m, sc.Err()
 }

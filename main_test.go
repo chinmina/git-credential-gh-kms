@@ -61,7 +61,7 @@ func TestReadRequest(t *testing.T) {
 		{"basic", "protocol=https\nhost=github.com\n", map[string]string{"protocol": "https", "host": "github.com"}},
 		{"stops at blank line", "protocol=https\n\nhost=github.com\n", map[string]string{"protocol": "https"}},
 		{"skips lines without =", "garbage\nhost=github.com\n", map[string]string{"host": "github.com"}},
-		{"last duplicate wins", "host=a\nhost=b\n", map[string]string{"host": "b"}},
+		{"multi-valued attributes repeat", "wwwauth[]=a\nwwwauth[]=b\n", map[string]string{"wwwauth[]": "b"}},
 		{"value may contain =", "path=a=b\n", map[string]string{"path": "a=b"}},
 		{"empty", "", map[string]string{}},
 	}
@@ -72,6 +72,17 @@ func TestReadRequest(t *testing.T) {
 				t.Errorf("got %v, %v, want %v", got, err, tt.want)
 			}
 		})
+	}
+}
+
+func TestReadRequestRejectsDuplicates(t *testing.T) {
+	for _, in := range []string{
+		"protocol=https\nhost=evil.example\nhost=github.com\n",
+		"protocol=http\nhost=github.com\nprotocol=https\n",
+	} {
+		if _, err := readRequest(strings.NewReader(in)); err == nil || !strings.Contains(err.Error(), "duplicate attribute") {
+			t.Errorf("readRequest(%q) err = %v, want duplicate attribute error", in, err)
+		}
 	}
 }
 
