@@ -480,8 +480,27 @@ func TestRunVersion(t *testing.T) {
 	if err := run([]string{"--version"}, strings.NewReader(""), &out); err != nil {
 		t.Fatalf("err = %v", err)
 	}
-	if got := out.String(); got != "dev\n" {
-		t.Errorf("output = %q, want %q", got, "dev\n")
+	if want := currentVersion() + "\n"; out.String() != want {
+		t.Errorf("output = %q, want %q", out.String(), want)
+	}
+}
+
+func TestResolveVersion(t *testing.T) {
+	tests := []struct {
+		name, stamped, module, want string
+	}{
+		{"release build", "1.2.3", "v1.2.3", "1.2.3"},
+		{"go install at a tag", "", "v1.2.3", "1.2.3"},
+		{"VCS build", "", "v0.1.1-0.20261031113911-6614b2479fc0+dirty", "0.1.1-0.20261031113911-6614b2479fc0+dirty"},
+		{"no VCS info", "", "(devel)", "dev"},
+		{"no build info", "", "", "dev"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveVersion(tt.stamped, tt.module); got != tt.want {
+				t.Errorf("resolveVersion(%q, %q) = %q, want %q", tt.stamped, tt.module, got, tt.want)
+			}
+		})
 	}
 }
 

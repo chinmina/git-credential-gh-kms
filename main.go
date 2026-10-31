@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -48,7 +49,7 @@ const (
 )
 
 // Set at release build time by goreleaser.
-var version = "dev"
+var version = ""
 
 var httpClient = &http.Client{
 	// Never replay a bearer-authenticated POST to a redirect target.
@@ -81,7 +82,7 @@ func main() {
 
 func run(args []string, stdin io.Reader, stdout io.Writer) error {
 	if len(args) == 1 && args[0] == "--version" {
-		_, err := fmt.Fprintln(stdout, version)
+		_, err := fmt.Fprintln(stdout, currentVersion())
 		return err
 	}
 	// Only "get" is meaningful; store/erase are no-ops (caching is git's job).
@@ -114,6 +115,27 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 		return err
 	}
 	return writeCredential(stdout, tok)
+}
+
+func currentVersion() string {
+	var module string
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		module = bi.Main.Version
+	}
+	return resolveVersion(version, module)
+}
+
+// resolveVersion falls back to the module version Go records for go install
+// and VCS builds, so source builds report more than "dev".
+func resolveVersion(stamped, module string) string {
+	switch {
+	case stamped != "":
+		return stamped
+	case module != "" && module != "(devel)":
+		return strings.TrimPrefix(module, "v") // match goreleaser's {{.Version}}
+	default:
+		return "dev"
+	}
 }
 
 // asciiEqualFold matches DNS names case-insensitively. strings.EqualFold also

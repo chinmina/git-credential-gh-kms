@@ -177,7 +177,8 @@ Windows archives are `.zip`.
 <details>
 <summary><strong>go install</strong></summary>
 
-Builds from source report the version `dev`.
+Builds from source report the module version Go records, such as `0.1.0` for
+`@v0.1.0`, or `dev` when no version is available.
 
 ```sh
 go install github.com/chinmina/git-credential-gh-kms@latest
