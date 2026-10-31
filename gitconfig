@@ -6,8 +6,8 @@
     # (e.g. ~/.gitconfig after /etc/gitconfig) is still called to store the token.
     helper =
     # Checked first; git stores the minted token here after a successful get.
-    # Git >= 2.41 evicts it at password_expiry_utc, so the timeout is just a ceiling.
-    helper = cache --timeout=3600
+    # Git >= 2.41 evicts it at password_expiry_utc; 3300s (55m) matches that on older git.
+    helper = cache --timeout=3300
     # Resolves to git-credential-gh-kms on $PATH.
     helper = gh-kms
     # One installation token covers every repo, so cache per host, not per path.
