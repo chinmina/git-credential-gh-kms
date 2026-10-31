@@ -27,6 +27,13 @@ Then register the helper. [`gitconfig`](gitconfig) is a complete example, which 
     useHttpPath = false
 ```
 
+`helper =` clears only the helpers set in config files git has already read. Git reads
+system, then global (`~/.gitconfig`), then repository config, and asks every helper in
+the list to store a token after a successful fetch. Put this block in the last file that
+sets a credential helper, usually `~/.gitconfig`. If it goes in `/etc/gitconfig`, a
+`helper = store` or `osxkeychain` line in a user's `~/.gitconfig` still runs, and
+writes each minted token to disk or the keychain.
+
 `git-credential-gh-kms --version` prints the installed version.
 
 ## Installation

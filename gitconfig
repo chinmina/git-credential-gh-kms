@@ -1,8 +1,9 @@
-# Example git config: install as /etc/gitconfig or ~/.gitconfig.
-# Requires git-credential-gh-kms on $PATH.
+# Example git config: install as ~/.gitconfig, the last file git reads that sets
+# a credential helper. Requires git-credential-gh-kms on $PATH.
 
 [credential "https://github.com"]
-    # Reset any helpers inherited from system config for this host.
+    # Clears only helpers from files read earlier. A helper set in a later file
+    # (e.g. ~/.gitconfig after /etc/gitconfig) is still called to store the token.
     helper =
     # Checked first; git stores the minted token here after a successful get.
     # Git >= 2.41 evicts it at password_expiry_utc, so the timeout is just a ceiling.
