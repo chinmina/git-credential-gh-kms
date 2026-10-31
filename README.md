@@ -6,6 +6,8 @@ A [git credential helper](https://git-scm.com/docs/gitcredentials) that mints a 
 
 Create an asymmetric KMS key with key spec `RSA_2048` and usage `SIGN_VERIFY`, holding the GitHub App's private key. The caller's AWS credentials need `kms:Sign` on it.
 
+`kms:Sign` on this key is equivalent to holding the App's private key: it can sign a JWT that mints a token for any installation of the App, with any permission the App has. `GH_TOKEN_REQUEST` narrows only the tokens this helper asks for. Allow `kms:Sign` in the key policy only for the roles that run the helper, and give the App only the permissions those roles need.
+
 Set these environment variables for git:
 
 | Variable | Required | Meaning |
