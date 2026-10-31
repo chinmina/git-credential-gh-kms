@@ -1,14 +1,56 @@
 # git-credential-gh-kms
 
-A [git credential helper](https://git-scm.com/docs/gitcredentials) that mints a GitHub App installation token for HTTPS fetches. The App's private key stays in AWS KMS: the helper signs the App JWT with `kms:Sign`, so no key material is held on the host.
+A [git credential helper][gitcredentials] that answers HTTPS requests for GitHub with a GitHub App installation token. The App's private key stays in AWS KMS: the helper signs the App JWT with `kms:Sign`, so no key material is held on the host.
 
-## Usage
+The helper suits long-running services that fetch from GitHub with git, such as the [Athens][athens] Go module proxy. These services otherwise hold a personal access token or the App's private key on disk. With this helper, the private key is imported into KMS once and cannot be extracted. Every signature needs IAM and key policy permission, and CloudTrail records each `Sign` call against the key.
 
-Create an asymmetric KMS key with key spec `RSA_2048` and usage `SIGN_VERIFY`, holding the GitHub App's private key. The caller's AWS credentials need `kms:Sign` on it.
+## How it works
+
+The diagram shows git fetching from a private repository, with Git's credential cache in front of this helper.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    box rgba(21,128,61,0.10) Host
+        participant Tool as Athens or go
+        participant Git as git
+        participant Cache as credential-cache
+    end
+    box rgba(29,78,216,0.10) This repository
+        participant Helper as git-credential-gh-kms
+    end
+    box rgba(126,34,206,0.10) External services
+        participant KMS as AWS KMS
+        participant GH as GitHub
+    end
+
+    Tool->>Git: fetch https://github.com/...
+    Git->>Cache: get
+    Cache-->>Git: nothing cached
+    Git->>Helper: get
+    Helper->>KMS: Sign App JWT
+    Note over KMS: CloudTrail records the Sign call
+    KMS-->>Helper: signature
+    Helper->>GH: create installation token
+    GH-->>Helper: token and expiry
+    Helper-->>Git: token and expiry
+    Git->>Cache: store
+    Git->>GH: fetch with token
+```
+
+Later fetches get the token from the cache at step 2 until it expires. The helper declines requests for other hosts and protocols, so git moves on to its next helper.
+
+## Configuration
+
+### KMS key
+
+Create a KMS key with `EXTERNAL` origin, key spec `RSA_2048`, and key usage `SIGN_VERIFY`, then import the GitHub App's private key into it with [`kms-import`][kms-import]. [Protecting the GitHub private key][chinmina-kms] on docs.chinmina.dev covers the key policy, the alias, and rotation. Import the key outside your infrastructure tooling: Terraform's `aws_kms_external_key` stores the key material in plain text in its state.
 
 `kms:Sign` on this key is equivalent to holding the App's private key: it can sign a JWT that mints a token for any installation of the App, with any permission the App has. `GH_TOKEN_REQUEST` narrows only the tokens this helper asks for. Allow `kms:Sign` in the key policy only for the roles that run the helper, and give the App only the permissions those roles need.
 
-Set these environment variables for git:
+### Environment variables
+
+The helper reads its settings from the environment git runs it in. AWS credentials and region come from the standard AWS SDK sources.
 
 | Variable | Required | Meaning |
 | -------- | -------- | ------- |
@@ -19,15 +61,20 @@ Set these environment variables for git:
 | `GH_API_URL` | no | API base URL. Defaults to `https://api.github.com`, or `https://<GH_HOST>/api/v3` for GitHub Enterprise Server. |
 | `GH_TOKEN_REQUEST` | no | JSON body for the token request. Defaults to `{"permissions":{"contents":"read"}}`. |
 
-Then register the helper. [`gitconfig`](gitconfig) is a complete example, which also caches the token and rewrites SSH remotes to HTTPS:
+### Git configuration
+
+Register the helper for `github.com` behind Git's credential cache:
 
 ```ini
+# ~/.gitconfig
 [credential "https://github.com"]
     helper =
-    helper = cache --timeout=3600
+    helper = cache --timeout=3300
     helper = gh-kms
     useHttpPath = false
 ```
+
+Installation tokens last one hour. The helper reports an expiry five minutes early, and Git 2.41 and later evict the cached token at that time. A `--timeout` of 3300 seconds (55 minutes) applies the same limit on older git versions. Without the cache, every git request mints a new token and makes a `kms:Sign` call. One installation token covers every repository, so `useHttpPath = false` caches it per host.
 
 `helper =` clears only the helpers set in config files git has already read. Git reads
 system, then global (`~/.gitconfig`), then repository config, and asks every helper in
@@ -36,7 +83,11 @@ sets a credential helper, usually `~/.gitconfig`. If it goes in `/etc/gitconfig`
 `helper = store` or `osxkeychain` line in a user's `~/.gitconfig` still runs, and
 writes each minted token to disk or the keychain.
 
-`git-credential-gh-kms --version` prints the installed version.
+[`gitconfig`](gitconfig) is a complete example, which also rewrites SSH remotes to HTTPS.
+
+## Guides
+
+- [Configuring Athens](docs/guides/configure-athens.md) builds an Athens image that fetches private Go modules with this helper.
 
 ## Installation
 
@@ -172,3 +223,8 @@ black-box system tests in Docker Compose: the Linux build of the helper signs wi
 [Local KMS](https://github.com/nsmithuk/local-kms) through the AWS SDK, and a fake
 GitHub token endpoint (`cmd/test-support`, not shipped) accepts only JWTs that verify
 against the KMS key's public key. The tests are in [`test/system/bats`](test/system/bats).
+
+[gitcredentials]: https://git-scm.com/docs/gitcredentials
+[athens]: https://docs.gomods.io/
+[kms-import]: https://github.com/chinmina/kms-import
+[chinmina-kms]: https://docs.chinmina.dev/guides/kms/
