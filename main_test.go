@@ -456,6 +456,7 @@ func TestRunIgnores(t *testing.T) {
 		{name: "http protocol", args: []string{"get"}, stdin: "protocol=http\nhost=github.com\n"},
 		{name: "other host", args: []string{"get"}, stdin: "protocol=https\nhost=gitlab.com\n"},
 		{name: "host with port", args: []string{"get"}, stdin: "protocol=https\nhost=github.com:443\n"},
+		{name: "host matching only under Unicode folding", args: []string{"get"}, host: "ghes.example.com", stdin: "protocol=https\nhost=ghe\u017f.example.com\n"},
 		{name: "default host when GH_HOST set", args: []string{"get"}, host: "ghe.example.com", stdin: github},
 		{name: "host after blank line", args: []string{"get"}, stdin: "protocol=https\n\nhost=github.com\n"},
 	}
