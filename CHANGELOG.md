@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.0](https://github.com/chinmina/git-credential-gh-kms/compare/v0.1.1...v1.0.0) (2026-11-09)
+
+
+### Bug Fixes
+
+* **deps:** update go dependencies ([#12](https://github.com/chinmina/git-credential-gh-kms/issues/12)) ([2aac75f](https://github.com/chinmina/git-credential-gh-kms/commit/2aac75f732b15ea398c4b734223e721a64874b2e))
+* **deps:** update jdx/mise-action action to v5.2.6 ([#13](https://github.com/chinmina/git-credential-gh-kms/issues/13)) ([9d7e541](https://github.com/chinmina/git-credential-gh-kms/commit/9d7e5417bdc42495df48338db8638f3edf16093b))
+* **deps:** update module github.com/aws/smithy-go to v1.28.8 ([#16](https://github.com/chinmina/git-credential-gh-kms/issues/16)) ([105b811](https://github.com/chinmina/git-credential-gh-kms/commit/105b811dd365306d0489e58aa03577922aa9e646))
+
+
+### Miscellaneous Chores
+
+* release 1.0.0 ([#15](https://github.com/chinmina/git-credential-gh-kms/issues/15)) ([d5f677c](https://github.com/chinmina/git-credential-gh-kms/commit/d5f677ca945d264dee7c8c6e7644fa35a60fcf62))
+
 ## [0.1.1](https://github.com/chinmina/git-credential-gh-kms/compare/v0.1.0...v0.1.1) (2026-10-31)
 
 
