@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1](https://github.com/chinmina/git-credential-gh-kms/compare/v1.0.0...v1.0.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency go to v1.27.4 ([#20](https://github.com/chinmina/git-credential-gh-kms/issues/20)) ([ea8e0a8](https://github.com/chinmina/git-credential-gh-kms/commit/ea8e0a8807080ddca0581a0d3fd371ceb08fefc7))
+* **deps:** update dependency goreleaser to v2.20.0 ([#18](https://github.com/chinmina/git-credential-gh-kms/issues/18)) ([b03d1c0](https://github.com/chinmina/git-credential-gh-kms/commit/b03d1c08c324b06dfc5ca36250f0ca97859ad706))
+* **deps:** update go dependencies ([#17](https://github.com/chinmina/git-credential-gh-kms/issues/17)) ([bd89595](https://github.com/chinmina/git-credential-gh-kms/commit/bd89595a9cef57efc1724a6b178a14c162aea334))
+* **deps:** update jdx/mise-action action to v5.2.7 ([#19](https://github.com/chinmina/git-credential-gh-kms/issues/19)) ([8ebfd83](https://github.com/chinmina/git-credential-gh-kms/commit/8ebfd83b1ce4eff1d846de294d16970c3cf70504))
+
 ## [1.0.0](https://github.com/chinmina/git-credential-gh-kms/compare/v0.1.1...v1.0.0) (2026-11-09)
 
 
